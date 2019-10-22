@@ -380,11 +380,10 @@ for generating client interface code for CRDs.
 
 ## Upgrade
 
-### <= v1.0.0 to >= v1.1.0
+### < v1.1.0 to >= v1.1.0
 
-Clients that write the desired traffic switching value have to move
-from ingress annotation `zalando.org/stack-traffic-weights: '{"mystack-v1":80, "mystack-v2": 20}'`
-to stackset `spec.traffic`:
+Clients that update the desired traffic values should switch from using the `zalando.org/stack-traffic-weights`
+annotation on Ingress objects to updating the `traffic` field in Stackset spec: 
 
 ```yaml
 spec:
@@ -394,3 +393,10 @@ spec:
   - stackName: mystack-v2
     weight: 20
 ```
+
+Stackset controller still supports both approaches to managing traffic, and clients
+can rely on an annotation on Ingress objects to determine whether they should use
+the Ingress object to manage traffic (`zalando.org/traffic-authoritative` is set
+to `true` or missing), or whether they should use Stackset spec (set to `false`).
+This allows for a less disruptive migration instead of updating all clients 
+at the same time.   
