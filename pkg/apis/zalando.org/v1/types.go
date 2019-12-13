@@ -17,6 +17,7 @@ type StackSet struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// +kubebuilder:required=true
 	Spec   StackSetSpec   `json:"spec"`
 	Status StackSetStatus `json:"status"`
 }
@@ -248,8 +249,8 @@ type StackServiceSpec struct {
 // StackSpecTemplate is the spec part of the Stack.
 // +k8s:deepcopy-gen=true
 type StackSpecTemplate struct {
-	StackSpec
-	Version string `json:"version"`
+	StackSpec `json:",inline"`
+	Version   string `json:"version"`
 }
 
 // StackStatus is the status part of the Stack.
