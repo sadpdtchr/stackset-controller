@@ -11,9 +11,15 @@ import (
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // StackSet describes an application resource.
 // +k8s:deepcopy-gen=true
+// +kubebuilder:printcolumn:name="Desired",type=string,JSONPath=`.status.stacks`
+// +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=`.status.readyStacks`
+// +kubebuilder:printcolumn:name="Traffic",type=string,JSONPath=`.status.stacksWithTraffic`
+// +kubebuilder:printcolumn:name="Age",type=string,JSONPath=`.metadata.creationTimestamp`
+// +kubebuilder:subresource:status
 type StackSet struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -52,7 +58,8 @@ type StackSetIngressSpec struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	Hosts             []string           `json:"hosts"`
 	BackendPort       intstr.IntOrString `json:"backendPort"`
-	Path              string             `json:"path"`
+	// +optional
+	Path string `json:"path"`
 }
 
 // StackSetExternalIngressSpec defines the required service
@@ -73,6 +80,7 @@ type StackLifecycle struct {
 	// Limit defines the maximum number of Stacks to keep around. If the
 	// number of Stacks exceeds the limit then the oldest stacks which are
 	// not getting traffic are deleted.
+	// +kubebuilder:validation:Minimum=1
 	Limit *int32 `json:"limit,omitempty"`
 }
 
@@ -179,19 +187,25 @@ type ActualTraffic struct {
 	StackName   string             `json:"stackName"`
 	ServiceName string             `json:"serviceName"`
 	ServicePort intstr.IntOrString `json:"servicePort"`
-	Weight      float64            `json:"weight"`
+
+	// +kubebuilder:validation:Format=float64
+	// +kubebuilder:validation:Type=number
+	Weight float64 `json:"weight"`
 }
 
 // DesiredTraffic is the desired traffic setting to direct traffic to
 // a stack. This is meant to use by clients to orchestrate traffic
 // switching.
 type DesiredTraffic struct {
-	StackName string  `json:"stackName"`
-	Weight    float64 `json:"weight"`
+	StackName string `json:"stackName"`
+	// +kubebuilder:validation:Type=number
+	// +kubebuilder:validation:Format=float64
+	Weight float64 `json:"weight"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// +kubebuilder:object:root=true
 // StackSetList is a list of StackSets.
 // +k8s:deepcopy-gen=true
 type StackSetList struct {
@@ -207,6 +221,15 @@ type StackSetList struct {
 // Stack defines one version of an application. It is possible to
 // switch traffic between multiple versions of an application.
 // +k8s:deepcopy-gen=true
+// +kubebuilder:printcolumn:name="Desired",type=string,JSONPath=`.spec.replicas`
+// +kubebuilder:printcolumn:name="Current",type=string,JSONPath=`.status.replicas`
+// +kubebuilder:printcolumn:name="Up-To-Date",type=string,JSONPath=`.status.updatedReplicas`
+// +kubebuilder:printcolumn:name="Ready Replicas",type=string,JSONPath=`.status.readyReplicas`
+// +kubebuilder:printcolumn:name="Traffic",type=string,JSONPath=`.status.actualTrafficWeight`
+// +kubebuilder:printcolumn:name="No-Traffic-Since",type=string,JSONPath=`.status.noTrafficSince`
+// +kubebuilder:printcolumn:name="Age",type=string,JSONPath=`.metadata.creationTimestamp`
+// +kubebuilder:subresource:status
+// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.labelSelector
 type Stack struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -252,7 +275,8 @@ type StackServiceSpec struct {
 // StackSpecTemplate is the spec part of the Stack.
 // +k8s:deepcopy-gen=true
 type StackSpecTemplate struct {
-	StackSpec
+	StackSpec `json:",inline"`
+	// +kubebuilder:validation:Pattern="^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$"
 	Version string `json:"version"`
 }
 
@@ -263,10 +287,14 @@ type StackStatus struct {
 	// routed to the stack.
 	// TODO: should we be using floats in the API?
 	// +optional
+	// +kubebuilder:validation:Format=float64
+	// +kubebuilder:validation:Type=number
 	ActualTrafficWeight float64 `json:"actualTrafficWeight"`
 	// DesiredTrafficWeight is desired amount of traffic to be routed to
 	// the stack.
 	// +optional
+	// +kubebuilder:validation:Format=float64
+	// +kubebuilder:validation:Type=number
 	DesiredTrafficWeight float64 `json:"desiredTrafficWeight"`
 	// Replicas is the number of replicas in the Deployment managed by the
 	// stack.
@@ -305,6 +333,8 @@ type PrescalingStatus struct {
 	Replicas int32 `json:"replicas,omitempty"`
 	// DesiredTrafficWeight is the desired traffic weight that the stack was prescaled for
 	// +optional
+	// +kubebuilder:validation:Format=float64
+	// +kubebuilder:validation:Type=number
 	DesiredTrafficWeight float64 `json:"desiredTrafficWeight,omitempty"`
 	// LastTrafficIncrease is the timestamp when the traffic was last increased on the stack
 	// +optional
