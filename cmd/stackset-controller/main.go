@@ -35,7 +35,6 @@ var (
 		MetricsAddress              string
 		NoTrafficScaledownTTL       time.Duration
 		ControllerID                string
-		MigrateTo                   string
 		BackendWeightsAnnotationKey string
 	}
 )
@@ -48,7 +47,6 @@ func main() {
 	kingpin.Flag("metrics-address", "defines where to serve metrics").Default(defaultMetricsAddress).StringVar(&config.MetricsAddress)
 	kingpin.Flag("controller-id", "ID of the controller used to determine ownership of StackSet resources").StringVar(&config.ControllerID)
 	kingpin.Flag("backend-weights-key", "Backend weights annotation key the controller will use to set current traffic values").Default(traffic.DefaultBackendWeightsAnnotationKey).StringVar(&config.BackendWeightsAnnotationKey)
-	kingpin.Flag("migrate-to", "Migrate desired traffic setting from Ingress to StackSet or from StackSet to Ingress").EnumVar(&config.MigrateTo, "ingress", "stackset")
 	kingpin.Parse()
 
 	if config.Debug {
@@ -69,7 +67,6 @@ func main() {
 	controller, err := controller.NewStackSetController(
 		client,
 		config.ControllerID,
-		config.MigrateTo,
 		config.BackendWeightsAnnotationKey,
 		prometheus.DefaultRegisterer,
 		config.Interval,
