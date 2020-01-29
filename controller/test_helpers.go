@@ -11,7 +11,7 @@ import (
 	ssunified "github.com/zalando-incubator/stackset-controller/pkg/clientset"
 	"github.com/zalando-incubator/stackset-controller/pkg/traffic"
 	apps "k8s.io/api/apps/v1"
-	autoscaling "k8s.io/api/autoscaling/v2beta1"
+	autoscaling "k8s.io/api/autoscaling/v2beta2"
 	v1 "k8s.io/api/core/v1"
 	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -106,7 +106,7 @@ func (f *testEnvironment) CreateServices(services []v1.Service) error {
 
 func (f *testEnvironment) CreateHPAs(hpas []autoscaling.HorizontalPodAutoscaler) error {
 	for _, hpa := range hpas {
-		_, err := f.client.AutoscalingV2beta1().HorizontalPodAutoscalers(hpa.Namespace).Create(&hpa)
+		_, err := f.client.AutoscalingV2beta2().HorizontalPodAutoscalers(hpa.Namespace).Create(&hpa)
 		if err != nil {
 			return err
 		}

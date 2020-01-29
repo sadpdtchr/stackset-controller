@@ -10,7 +10,7 @@ import (
 	zv1 "github.com/zalando-incubator/stackset-controller/pkg/apis/zalando.org/v1"
 	"github.com/zalando-incubator/stackset-controller/pkg/traffic"
 	appsv1 "k8s.io/api/apps/v1"
-	autoscaling "k8s.io/api/autoscaling/v2beta1"
+	autoscaling "k8s.io/api/autoscaling/v2beta2"
 	v1 "k8s.io/api/core/v1"
 	extensions "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/types"
@@ -245,14 +245,6 @@ func (ssc *StackSetContainer) hasDesiredTrafficFromStackSet() bool {
 
 func (ssc *StackSetContainer) hasActualTrafficFromStackSet() bool {
 	return len(ssc.StackSet.Status.Traffic) > 0
-}
-
-func (ssc *StackSetContainer) findFallbackStack() *StackContainer {
-	stacks := make(map[string]*StackContainer)
-	for _, stack := range ssc.StackContainers {
-		stacks[stack.Name()] = stack
-	}
-	return findFallbackStack(stacks)
 }
 
 // updateDesiredTrafficFromStackSet gets desired from stackset spec
